@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - 'feature/**'
+
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: 5ync-shoploc/shoploc-ci-cd/.github/workflows/maven-ci.yml@develop
+
+    with:
+      sonar-project-key: "5ync-shoploc_shoploc-identity-service"
+      sonar-organization: "5ync-shoploc"
+
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
