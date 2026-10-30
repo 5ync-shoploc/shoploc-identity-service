@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.shoploc</groupId>
         <artifactId>shoploc-parent</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
         <!-- Parent resolved from GitHub Packages (separate repos).
              Monorepo: replace by <relativePath>../pom.xml</relativePath> -->
         <relativePath/>
@@ -43,10 +43,10 @@
             <optional>true</optional>
         </dependency>
 
-        <!--        <dependency>-->
-        <!--            <groupId>org.springframework.cloud</groupId>-->
-        <!--            <artifactId>spring-cloud-starter-config</artifactId>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-config</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

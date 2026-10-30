@@ -1,3 +1,6 @@
 spring:
   application:
     name: shoploc-identity-service
+  config:
+    import: optional:configserver:http://localhost:8888
+
