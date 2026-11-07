@@ -181,6 +181,34 @@ curl -i -X POST http://localhost:8083/api/identity/auth/register \
 Si l'attribution du rôle échoue, le compte est supprimé : on ne garde jamais un compte
 sans rôle.
 
+### `POST /api/identity/auth/login` — Se connecter (US 1.2, SCRUM-35)
+
+Accès public. Le service transmet l'e-mail et le mot de passe à Keycloak (OpenID Connect,
+endpoint `/token`) et renvoie le token JWT.
+
+```bash
+curl -i -X POST http://localhost:8083/api/identity/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email": "julie@mail.fr", "password": "motdepasse"}'
+```
+
+| Réponse | Cas |
+|---|---|
+| `200 OK` | `accessToken`, `refreshToken`, `tokenType` (`Bearer`), `expiresIn` (secondes) |
+| `400 Bad Request` | e-mail ou mot de passe manquant |
+| `401 Unauthorized` | identifiants invalides (même message que l'e-mail existe ou non) |
+
+Contenu utile de l'`accessToken` (à décoder sur [jwt.io](https://jwt.io)) :
+
+| Claim | Signification |
+|---|---|
+| `sub` | identifiant de l'utilisateur (le même que l'`id` renvoyé à l'inscription) |
+| `realm_access.roles` | contient le rôle ShopLoc : `CLIENT`, `COMMERCANT` ou `COLLECTIVITE` |
+| `email`, `given_name`, `family_name` | informations du profil |
+
+Les autres services vérifient ce token et utilisent `sub` et le rôle pour les contrôles
+d'accès.
+
 ---
 
 ## Tests
@@ -192,7 +220,9 @@ sans rôle.
 | Classe | Ce qui est testé |
 |---|---|
 | `RegistrationServiceTest` | création + rôle, e-mail déjà utilisé, annulation si le rôle échoue (Mockito) |
-| `AuthControllerTest` | codes HTTP 201 / 400 / 409, accès sans token (MockMvc) |
+| `AuthControllerTest` | inscription (201 / 400 / 409) et connexion (200 / 400 / 401), accès sans token (MockMvc) |
+| `KeycloakAdminClientTest` | appels à l'API d'administration de Keycloak (MockRestServiceServer) |
+| `KeycloakTokenClientTest` | demande de token à Keycloak, refus des identifiants (MockRestServiceServer) |
 | `ShoplocIdentityServiceApplicationTests` | démarrage du contexte Spring |
 
 Les tests n'ont pas besoin de Keycloak (il est simulé).

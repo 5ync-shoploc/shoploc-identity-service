@@ -2,6 +2,8 @@ package com.shoploc.shoplocidentityservice.auth;
 
 import com.shoploc.shoplocidentityservice.config.SecurityConfig;
 import com.shoploc.shoplocidentityservice.keycloak.EmailAlreadyUsedException;
+import com.shoploc.shoplocidentityservice.keycloak.InvalidCredentialsException;
+import com.shoploc.shoplocidentityservice.keycloak.KeycloakTokenClient;
 import com.shoploc.shoplocidentityservice.user.Role;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +32,9 @@ class AuthControllerTest {
 
     @MockitoBean
     RegistrationService registrationService;
+
+    @MockitoBean
+    KeycloakTokenClient tokenClient;
 
     @Test
     void inscription_valide_renvoie_201_sans_authentification() throws Exception {
@@ -74,5 +80,40 @@ class AuthControllerTest {
                         {"lastName":"Dupont","firstName":"Julie","email":"julie@mail.fr",
                          "password":"motdepasse","role":"CLIENT"}"""))
                 .andExpect(status().isConflict());
+    }
+
+    // --- US 1.2 : connexion ---
+
+    @Test
+    void connexion_valide_renvoie_200_et_le_token() throws Exception {
+        when(tokenClient.login("julie@mail.fr", "motdepasse"))
+                .thenReturn(new TokenResponse("jwt", "refresh", "Bearer", 900));
+
+        mvc.perform(post("/api/identity/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"email":" Julie@Mail.fr ","password":"motdepasse"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("jwt"))
+                .andExpect(jsonPath("$.expiresIn").value(900));
+
+        verify(tokenClient).login("julie@mail.fr", "motdepasse");
+    }
+
+    @Test
+    void identifiants_invalides_renvoie_401() throws Exception {
+        when(tokenClient.login(any(), any())).thenThrow(new InvalidCredentialsException());
+
+        mvc.perform(post("/api/identity/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"email":"julie@mail.fr","password":"mauvais"}"""))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void connexion_sans_mot_de_passe_renvoie_400() throws Exception {
+        mvc.perform(post("/api/identity/auth/login").contentType(MediaType.APPLICATION_JSON).content("""
+                        {"email":"julie@mail.fr"}"""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.password").exists());
+
+        verifyNoInteractions(tokenClient);
     }
 }

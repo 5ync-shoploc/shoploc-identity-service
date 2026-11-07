@@ -22,6 +22,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // US 1.1 : l'inscription est ouverte aux visiteurs
                         .requestMatchers(HttpMethod.POST, "/api/identity/auth/register").permitAll()
+                        // US 1.2 : la connexion aussi (on n'a pas encore de token)
+                        .requestMatchers(HttpMethod.POST, "/api/identity/auth/login").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated());
         return http.build();
