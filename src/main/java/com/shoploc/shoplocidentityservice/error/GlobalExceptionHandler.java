@@ -2,6 +2,7 @@ package com.shoploc.shoplocidentityservice.error;
 
 import com.shoploc.shoplocidentityservice.keycloak.EmailAlreadyUsedException;
 import com.shoploc.shoplocidentityservice.keycloak.InvalidCredentialsException;
+import com.shoploc.shoplocidentityservice.keycloak.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -47,5 +48,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     ProblemDetail handleInvalidCredentials(InvalidCredentialsException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, e.getMessage());
+    }
+
+    /** 404 : le compte du token n'existe plus dans Keycloak. */
+    @ExceptionHandler(UserNotFoundException.class)
+    ProblemDetail handleUserNotFound(UserNotFoundException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Utilisateur introuvable");
     }
 }

@@ -5,6 +5,11 @@ spring:
     import: optional:configserver:http://localhost:8888
   security:
     oauth2:
+      # Vérification des JWT reçus (signature via les clés publiques de Keycloak + émetteur)
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URL:http://localhost:8180/realms/shoploc}
+          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:shoploc}/protocol/openid-connect/certs
       client:
         registration:
           keycloak:
