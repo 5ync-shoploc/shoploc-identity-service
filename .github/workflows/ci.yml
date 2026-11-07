@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   ci:
@@ -24,3 +25,4 @@ jobs:
 
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
