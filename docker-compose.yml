@@ -1,0 +1,17 @@
+# Environnement de développement local du service d'identité.
+# Démarrage : docker compose up -d   (Keycloak sur http://localhost:8180)
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.0
+    container_name: shoploc-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_PORT: 8180
+      KC_HEALTH_ENABLED: "true"
+      SHOPLOC_IDENTITY_CLIENT_SECRET: ${SHOPLOC_IDENTITY_CLIENT_SECRET:-123}
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./keycloak/realm-shoploc.json:/opt/keycloak/data/import/realm-shoploc.json:ro

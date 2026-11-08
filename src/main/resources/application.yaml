@@ -3,4 +3,28 @@ spring:
     name: shoploc-identity-service
   config:
     import: optional:configserver:http://localhost:8888
+  security:
+    oauth2:
+      # Vérification des JWT reçus (signature via les clés publiques de Keycloak + émetteur)
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URL:http://localhost:8180/realms/shoploc}
+          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:shoploc}/protocol/openid-connect/certs
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: ${KEYCLOAK_CLIENT_ID:shoploc-identity}
+            client-secret: ${SHOPLOC_IDENTITY_CLIENT_SECRET:change-me}
+            authorization-grant-type: client_credentials
+        provider:
+          keycloak:
+            token-uri: ${KEYCLOAK_URL:http://localhost:8180}/realms/${KEYCLOAK_REALM:shoploc}/protocol/openid-connect/token
 
+server:
+  port: 8083
+
+shoploc:
+  keycloak:
+    server-url: ${KEYCLOAK_URL:http://localhost:8180}
+    realm: ${KEYCLOAK_REALM:shoploc}
