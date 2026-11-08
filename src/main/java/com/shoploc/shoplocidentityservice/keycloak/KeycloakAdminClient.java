@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,6 +74,79 @@ public class KeycloakAdminClient {
                 .body(List.of(roleRepresentation))
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    /**
+     * Lit le profil d'un utilisateur.
+     *
+     * @throws UserNotFoundException si l'utilisateur n'existe pas (HTTP 404 de Keycloak)
+     */
+    public KeycloakUser getUser(String userId) {
+        Map<String, Object> user = fetchUser(userId);
+        return new KeycloakUser(
+                (String) user.get("id"),
+                (String) user.get("email"),
+                (String) user.get("firstName"),
+                (String) user.get("lastName"),
+                phoneOf(user));
+    }
+
+    /**
+     * Met à jour nom, prénom, e-mail et téléphone.
+     * On relit d'abord la représentation complète puis on la renvoie modifiée,
+     * pour ne pas effacer les autres champs du compte.
+     *
+     * @throws EmailAlreadyUsedException si le nouvel e-mail appartient à un autre compte (HTTP 409)
+     */
+    public void updateUser(String userId, String email, String firstName, String lastName, String phone) {
+        Map<String, Object> user = new HashMap<>(fetchUser(userId));
+        user.put("email", email);
+        user.put("firstName", firstName);
+        user.put("lastName", lastName);
+
+        Map<String, Object> attributes = new HashMap<>();
+        if (user.get("attributes") instanceof Map<?, ?> existing) {
+            existing.forEach((k, v) -> attributes.put((String) k, v));
+        }
+        if (phone == null || phone.isBlank()) {
+            attributes.remove("phone");
+        } else {
+            attributes.put("phone", List.of(phone));
+        }
+        user.put("attributes", attributes);
+
+        restClient.put()
+                .uri("/users/{id}", userId)
+                .body(user)
+                .retrieve()
+                .onStatus(status -> status.value() == HttpStatus.CONFLICT.value(), (request, response) -> {
+                    throw new EmailAlreadyUsedException(email);
+                })
+                .toBodilessEntity();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> fetchUser(String userId) {
+        Map<String, Object> user = restClient.get()
+                .uri("/users/{id}", userId)
+                .retrieve()
+                .onStatus(status -> status.value() == HttpStatus.NOT_FOUND.value(), (request, response) -> {
+                    throw new UserNotFoundException(userId);
+                })
+                .body(Map.class);
+        if (user == null) {
+            throw new UserNotFoundException(userId);
+        }
+        return user;
+    }
+
+    private static String phoneOf(Map<String, Object> user) {
+        if (user.get("attributes") instanceof Map<?, ?> attributes
+                && attributes.get("phone") instanceof List<?> values
+                && !values.isEmpty()) {
+            return (String) values.getFirst();
+        }
+        return null;
     }
 
     public void deleteUser(String userId) {

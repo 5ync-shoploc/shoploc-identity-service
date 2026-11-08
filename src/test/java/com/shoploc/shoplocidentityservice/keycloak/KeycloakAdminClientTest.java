@@ -105,4 +105,78 @@ class KeycloakAdminClientTest {
 
         keycloak.verify();
     }
+
+    // --- US 1.3 : profil ---
+
+    private static final String USER_JSON = """
+            {"id":"abc-123","username":"julie@mail.fr","email":"julie@mail.fr","firstName":"Julie",
+             "lastName":"Dupont","enabled":true,"attributes":{"phone":["0612345678"]}}""";
+
+    @Test
+    void getUser_lit_le_profil_et_le_telephone() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andRespond(withSuccess(USER_JSON, MediaType.APPLICATION_JSON));
+
+        assertThat(client.getUser("abc-123"))
+                .isEqualTo(new KeycloakUser("abc-123", "julie@mail.fr", "Julie", "Dupont", "0612345678"));
+    }
+
+    @Test
+    void getUser_sans_telephone() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andRespond(withSuccess("{\"id\":\"abc-123\",\"email\":\"julie@mail.fr\"}", MediaType.APPLICATION_JSON));
+
+        assertThat(client.getUser("abc-123").phone()).isNull();
+    }
+
+    @Test
+    void getUser_404_devient_UserNotFoundException() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThatThrownBy(() -> client.getUser("abc-123")).isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
+    void updateUser_relit_le_compte_puis_renvoie_la_version_modifiee() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess(USER_JSON, MediaType.APPLICATION_JSON));
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andExpect(method(HttpMethod.PUT))
+                .andExpect(jsonPath("$.email").value("julie.d@mail.fr"))
+                .andExpect(jsonPath("$.lastName").value("Durand"))
+                .andExpect(jsonPath("$.enabled").value(true))
+                .andExpect(jsonPath("$.attributes.phone[0]").value("0700000000"))
+                .andRespond(withNoContent());
+
+        client.updateUser("abc-123", "julie.d@mail.fr", "Julie", "Durand", "0700000000");
+
+        keycloak.verify();
+    }
+
+    @Test
+    void updateUser_sans_telephone_retire_l_attribut() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andRespond(withSuccess(USER_JSON, MediaType.APPLICATION_JSON));
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andExpect(method(HttpMethod.PUT))
+                .andExpect(jsonPath("$.attributes.phone").doesNotExist())
+                .andRespond(withNoContent());
+
+        client.updateUser("abc-123", "julie@mail.fr", "Julie", "Dupont", null);
+
+        keycloak.verify();
+    }
+
+    @Test
+    void updateUser_409_devient_EmailAlreadyUsedException() {
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andRespond(withSuccess(USER_JSON, MediaType.APPLICATION_JSON));
+        keycloak.expect(requestTo(BASE + "/users/abc-123"))
+                .andExpect(method(HttpMethod.PUT))
+                .andRespond(withStatus(HttpStatus.CONFLICT));
+
+        assertThatThrownBy(() -> client.updateUser("abc-123", "pris@mail.fr", "Julie", "Dupont", null))
+                .isInstanceOf(EmailAlreadyUsedException.class);
+    }
 }

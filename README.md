@@ -121,6 +121,7 @@ docker compose down
 | Client `shoploc-frontend` (public, PKCE) | Connexion depuis l'application React (`http://localhost:5173`) |
 | Attribut utilisateur `phone` | Téléphone modifiable depuis le profil |
 | E-mail unique, connexion par e-mail | `duplicateEmailsAllowed: false`, `loginWithEmailAllowed: true` |
+| E-mail = nom d'utilisateur | `registrationEmailAsUsername: true` : le nom d'utilisateur suit l'e-mail quand il est modifié |
 
 Pour modifier le realm : faire la modification dans la console, puis la reporter dans
 `keycloak/realm-shoploc.json` et commiter ce fichier, sinon elle sera perdue au prochain
@@ -209,6 +210,42 @@ Contenu utile de l'`accessToken` (à décoder sur [jwt.io](https://jwt.io)) :
 Les autres services vérifient ce token et utilisent `sub` et le rôle pour les contrôles
 d'accès.
 
+### `GET /api/identity/users/me` — Consulter mon profil (US 1.3, SCRUM-36)
+
+Token obligatoire. Il n'y a pas d'identifiant dans l'URL : le service utilise le `sub`
+du token, donc chacun ne peut lire **que son propre profil**.
+
+```bash
+TOKEN=...   # accessToken renvoyé par /auth/login
+curl -i http://localhost:8083/api/identity/users/me -H "Authorization: Bearer $TOKEN"
+```
+
+Réponse `200 OK` : `id`, `lastName`, `firstName`, `email`, `phone`, `role`.
+
+### `PUT /api/identity/users/me` — Modifier mon profil (US 1.3, SCRUM-36)
+
+```bash
+curl -i -X PUT http://localhost:8083/api/identity/users/me \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"lastName": "Dupont", "firstName": "Julie", "email": "julie@mail.fr", "phone": "06 12 34 56 78"}'
+```
+
+| Champ | Règle |
+|---|---|
+| `lastName`, `firstName`, `email` | obligatoires (mêmes règles qu'à l'inscription) |
+| `phone` | facultatif, chiffres, espaces, `.`, `-` et `+` (6 à 20 caractères) ; vide = supprimé |
+
+| Réponse | Cas |
+|---|---|
+| `200 OK` | profil mis à jour (renvoie le nouveau profil) |
+| `400 Bad Request` | champ manquant ou invalide |
+| `401 Unauthorized` | pas de token, token expiré ou invalide |
+| `409 Conflict` | le nouvel e-mail appartient déjà à un autre compte |
+
+Après un changement d'e-mail, l'utilisateur se connecte avec le **nouvel** e-mail
+(le realm utilise l'e-mail comme nom d'utilisateur). Le token déjà délivré reste valide
+jusqu'à son expiration (15 min) mais contient encore l'ancien e-mail.
+
 ---
 
 ## Tests
@@ -223,6 +260,8 @@ d'accès.
 | `AuthControllerTest` | inscription (201 / 400 / 409) et connexion (200 / 400 / 401), accès sans token (MockMvc) |
 | `KeycloakAdminClientTest` | appels à l'API d'administration de Keycloak (MockRestServiceServer) |
 | `KeycloakTokenClientTest` | demande de token à Keycloak, refus des identifiants (MockRestServiceServer) |
+| `ProfileControllerTest` | profil : 401 sans token, 200 avec un JWT simulé, 400, 409 |
+| `ProfileServiceTest` | lecture / modification du profil, normalisation de l'e-mail et du téléphone |
 | `ShoplocIdentityServiceApplicationTests` | démarrage du contexte Spring |
 
 Les tests n'ont pas besoin de Keycloak (il est simulé).
@@ -239,6 +278,11 @@ Variables d'environnement (valeurs par défaut adaptées au poste de développem
 | `KEYCLOAK_REALM` | `shoploc` | Realm ShopLoc |
 | `KEYCLOAK_CLIENT_ID` | `shoploc-identity` | Client technique du service |
 | `SHOPLOC_IDENTITY_CLIENT_SECRET` | `change-me` | Secret du client (doit être identique dans le `.env` de Keycloak) |
+| `KEYCLOAK_ISSUER_URL` | `http://localhost:8180/realms/shoploc` | Émetteur attendu dans les JWT (claim `iss`) : l'URL de Keycloak **vue par le frontend** |
+
+> En Docker / Kubernetes, `KEYCLOAK_URL` (adresse interne, ex. `http://keycloak:8180`) et
+> `KEYCLOAK_ISSUER_URL` (adresse publique) peuvent être différentes : c'est pour cela
+> qu'elles sont séparées.
 
 En dehors du poste de développement, le secret est fourni par les GitHub Secrets /
 Secrets Kubernetes, jamais écrit dans le code.
@@ -254,3 +298,4 @@ Secrets Kubernetes, jamais écrit dans le code.
 | `port is already allocated` sur 8180 | Un autre Keycloak tourne : `docker ps`, puis `docker stop <nom>` |
 | Inscription en erreur 500, logs `401` vers Keycloak | Le secret du `.env` et `SHOPLOC_IDENTITY_CLIENT_SECRET` ne correspondent pas |
 | Modification du realm perdue | La reporter dans `keycloak/realm-shoploc.json` (voir plus haut) |
+| `401` sur `/users/me` avec un token pourtant récent | Le `iss` du token ne correspond pas à `KEYCLOAK_ISSUER_URL` (ex. token obtenu via `127.0.0.1` au lieu de `localhost`) |
