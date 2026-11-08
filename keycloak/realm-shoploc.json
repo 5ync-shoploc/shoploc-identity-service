@@ -3,6 +3,7 @@
   "enabled": true,
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
+  "registrationEmailAsUsername": true,
   "duplicateEmailsAllowed": false,
   "accessTokenLifespan": 900,
   "roles": {
