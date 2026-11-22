@@ -26,6 +26,8 @@ public class SecurityConfig {
                         // US 1.2 : la connexion aussi (on n'a pas encore de token)
                         .requestMatchers(HttpMethod.POST, "/api/identity/auth/login").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Contrat API (Swagger UI) : pas de donnée métier, pas besoin d'être connecté
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 // Toutes les autres routes exigent un JWT Keycloak valide (sinon HTTP 401)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
