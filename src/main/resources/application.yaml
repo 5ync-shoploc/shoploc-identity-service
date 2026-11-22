@@ -2,7 +2,9 @@ spring:
   application:
     name: shoploc-identity-service
   config:
-    import: optional:configserver:http://localhost:8888
+    # ".env[.properties]" : lit le même fichier .env que "docker compose" (voir .env.example),
+    # pour ne jamais avoir à exporter de variable ni à les saisir dans IntelliJ.
+    import: optional:configserver:http://localhost:8888,optional:file:.env[.properties]
   security:
     oauth2:
       # Vérification des JWT reçus (signature via les clés publiques de Keycloak + émetteur)
@@ -15,7 +17,9 @@ spring:
           keycloak:
             provider: keycloak
             client-id: ${KEYCLOAK_CLIENT_ID:shoploc-identity}
-            client-secret: ${SHOPLOC_IDENTITY_CLIENT_SECRET:change-me}
+            # Même valeur par défaut que le docker-compose de Keycloak (.env.example) : ça marche
+            # dès le premier lancement, même sans fichier .env.
+            client-secret: ${SHOPLOC_IDENTITY_CLIENT_SECRET:123}
             authorization-grant-type: client_credentials
         provider:
           keycloak:
