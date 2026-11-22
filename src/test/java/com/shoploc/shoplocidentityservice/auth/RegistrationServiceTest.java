@@ -3,6 +3,7 @@ package com.shoploc.shoplocidentityservice.auth;
 import com.shoploc.shoplocidentityservice.keycloak.EmailAlreadyUsedException;
 import com.shoploc.shoplocidentityservice.keycloak.KeycloakAdminClient;
 import com.shoploc.shoplocidentityservice.keycloak.NewKeycloakUser;
+import com.shoploc.shoplocidentityservice.profile.repository.UtilisateurRepository;
 import com.shoploc.shoplocidentityservice.user.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,9 @@ class RegistrationServiceTest {
 
     @Mock
     KeycloakAdminClient keycloak;
+
+    @Mock
+    UtilisateurRepository utilisateurRepository;
 
     @InjectMocks
     RegistrationService service;

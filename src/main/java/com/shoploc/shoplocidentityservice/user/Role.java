@@ -6,5 +6,6 @@ package com.shoploc.shoplocidentityservice.user;
 public enum Role {
     CLIENT,
     COMMERCANT,
-    COLLECTIVITE
+    COLLECTIVITE,
+    ADMIN
 }

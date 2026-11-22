@@ -68,7 +68,7 @@ class AuthControllerTest {
     void role_inconnu_renvoie_400() throws Exception {
         mvc.perform(post(URL).contentType(MediaType.APPLICATION_JSON).content("""
                         {"lastName":"Dupont","firstName":"Julie","email":"julie@mail.fr",
-                         "password":"motdepasse","role":"ADMIN"}"""))
+                         "password":"motdepasse","role":"SUPERADMIN"}"""))
                 .andExpect(status().isBadRequest());
     }
 
