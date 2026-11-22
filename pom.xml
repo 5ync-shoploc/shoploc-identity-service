@@ -106,6 +106,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Base H2 en mémoire pour les tests (voir src/test/resources/application-test.yaml) :
+             évite de dépendre d'un vrai PostgreSQL pendant le build/CI. -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Contrat API (Swagger UI + /v3/api-docs), pour documenter les échanges avec le frontend.
              Version fixée explicitement : la ligne 3.2.0 vise Spring Boot 4.1.x (la 3.2.1 vise 4.2). -->
         <dependency>
