@@ -2,6 +2,9 @@ package com.shoploc.shoplocidentityservice.profile;
 
 import com.shoploc.shoplocidentityservice.config.SecurityConfig;
 import com.shoploc.shoplocidentityservice.keycloak.EmailAlreadyUsedException;
+import com.shoploc.shoplocidentityservice.profile.controller.ProfileController;
+import com.shoploc.shoplocidentityservice.profile.dto.ProfileResponse;
+import com.shoploc.shoplocidentityservice.profile.service.ProfileService;
 import com.shoploc.shoplocidentityservice.user.Role;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +47,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void sans_token_renvoie_401() throws Exception {
+    void sansTokenRenvoie401() throws Exception {
         mvc.perform(get(URL)).andExpect(status().isUnauthorized());
         mvc.perform(put(URL).contentType(MediaType.APPLICATION_JSON).content(BODY))
                 .andExpect(status().isUnauthorized());
@@ -53,7 +56,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void consulter_mon_profil_utilise_le_sub_et_le_role_du_token() throws Exception {
+    void consulterMonProfilUtiliseLeSubEtLeRoleDuToken() throws Exception {
         when(profileService.getProfile("user-123", Role.CLIENT)).thenReturn(julie());
 
         mvc.perform(get(URL).with(jwt().jwt(j -> j.subject("user-123")
@@ -65,7 +68,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void modifier_mon_profil_renvoie_200() throws Exception {
+    void modifierMoProfilRenvoie200() throws Exception {
         when(profileService.updateProfile(eq("user-123"), eq(Role.CLIENT), any())).thenReturn(julie());
 
         mvc.perform(put(URL).with(jwt().jwt(j -> j.subject("user-123")
@@ -79,7 +82,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void telephone_invalide_renvoie_400() throws Exception {
+    void telephoneInvalideRenvoie400() throws Exception {
         mvc.perform(put(URL).with(jwt().jwt(j -> j.subject("user-123")))
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"lastName":"Dupont","firstName":"Julie","email":"julie@mail.fr","phone":"abc"}"""))
@@ -88,7 +91,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void email_deja_pris_par_un_autre_compte_renvoie_409() throws Exception {
+    void emailDejaPrisParUnAutreCompteRenvoie409() throws Exception {
         when(profileService.updateProfile(any(), any(), any())).thenThrow(new EmailAlreadyUsedException("julie@mail.fr"));
 
         mvc.perform(put(URL).with(jwt().jwt(j -> j.subject("user-123")))
@@ -97,7 +100,7 @@ class ProfileControllerTest {
     }
 
     @Test
-    void roleOf_sans_claim_realm_access_renvoie_null() {
+    void roleOfSansClaimRealmAccessRenvoieNull() {
         var token = org.springframework.security.oauth2.jwt.Jwt.withTokenValue("t")
                 .header("alg", "none").subject("user-123").build();
         org.assertj.core.api.Assertions.assertThat(ProfileController.roleOf(token)).isNull();

@@ -1,4 +1,4 @@
-package com.shoploc.shoplocidentityservice.profile;
+package com.shoploc.shoplocidentityservice.profile.dto;
 
 import com.shoploc.shoplocidentityservice.user.Role;
 

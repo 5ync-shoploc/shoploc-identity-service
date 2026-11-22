@@ -2,6 +2,8 @@ package com.shoploc.shoplocidentityservice.profile;
 
 import com.shoploc.shoplocidentityservice.keycloak.KeycloakAdminClient;
 import com.shoploc.shoplocidentityservice.keycloak.KeycloakUser;
+import com.shoploc.shoplocidentityservice.profile.dto.ProfileResponse;
+import com.shoploc.shoplocidentityservice.profile.service.ProfileService;
 import com.shoploc.shoplocidentityservice.user.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,5 +1,8 @@
-package com.shoploc.shoplocidentityservice.profile;
+package com.shoploc.shoplocidentityservice.profile.controller;
 
+import com.shoploc.shoplocidentityservice.profile.dto.ProfileResponse;
+import com.shoploc.shoplocidentityservice.profile.UpdateProfileRequest;
+import com.shoploc.shoplocidentityservice.profile.service.ProfileService;
 import com.shoploc.shoplocidentityservice.user.Role;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,7 +44,7 @@ public class ProfileController {
     }
 
     /** Rôle ShopLoc lu dans le claim Keycloak {@code realm_access.roles}. */
-    static Role roleOf(Jwt jwt) {
+    public static Role roleOf(Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
         if (realmAccess == null || !(realmAccess.get("roles") instanceof Collection<?> roles)) {
             return null;
